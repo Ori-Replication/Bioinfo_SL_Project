@@ -1,1 +1,3 @@
-data/download_data/OmicsCNGene.csv
+data/download_data/
+logs_models/
+ref_projects/
