@@ -45,7 +45,7 @@ class HGT(torch.nn.Module):
         self.convs = torch.nn.ModuleList()
         for _ in range(num_layers):
             conv = HGTConv(hidden_channels, hidden_channels, data.metadata(),
-                           num_heads, group='sum')
+                           num_heads)
             self.convs.append(conv)
 
         self.lin = Linear(hidden_channels, out_channels)
@@ -62,62 +62,3 @@ class HGT(torch.nn.Module):
         return x_dict
 
 
-
-
-# class GIN(torch.nn.Module):
-
-    def __init__(self, num_layer, emb_dim, JK = "last", drop_ratio = 0.2, gnn_type='gin'):
-        super(GIN, self).__init__()
-        self.num_layer = num_layer
-        self.drop_ratio = drop_ratio
-        self.JK = JK
-
-        if self.num_layer < 2:
-            raise ValueError("Number of GNN layers must be greater than 1.")
-
-        ###List of message-passing GNN convs
-        self.gnns = torch.nn.ModuleList()
-
-        for layer in range(num_layer):
-            if layer == 0:
-                input_layer = True
-            else:
-                input_layer = False
-
-
-            self.gnns.append(GINConv(emb_dim, aggr = "add", input_layer = input_layer))
-            # elif gnn_type == "gin_no_e":
-            #     self.gnns.append(GINConv_no_e(emb_dim, aggr = "add", input_layer = input_layer))
-            # elif gnn_type == "gin_stand":
-            #     self.gnns.append(GINConv_stand(emb_dim, aggr = "add", input_layer = input_layer))
-            # elif gnn_type == "gcn":
-            #     self.gnns.append(GCNConv(emb_dim,input_layer=input_layer))
-
-    #def forward(self, x, edge_index, edge_attr):
-    def forward(self, x, edge_index, edge_attr):
-        
-        h_list = [x]
-        # e_list=[]
-        # print(h_list.shape)
-        for layer in range(self.num_layer):
-            # print(edge_index.dtype)
-            # print(edge_index)
-            # print(layer)
-            h= self.gnns[layer](h_list[layer], edge_index, edge_attr)
-            if layer == self.num_layer - 1:
-                #remove relu from the last layer
-                h = F.dropout(h, self.drop_ratio, training = self.training)
-            else:
-                h = F.dropout(F.relu(h), self.drop_ratio, training = self.training)
-            h_list.append(h)
-            # e_list.append(e)
-            
-        if self.JK == "last":
-            node_representation = h_list[-1]
-            # edge_representation=e_list[-1]
-           
-        elif self.JK == "sum":
-            h_list = [h.unsqueeze_(0) for h in h_list]
-            node_representation = torch.sum(torch.cat(h_list[1:], dim = 0), dim = 0)[0]
-
-        return node_representation
