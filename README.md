@@ -1,4 +1,4 @@
-Read 
+Read OmniSynth.pdf for the final report
 
 How to run:
 
